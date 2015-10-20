@@ -1,0 +1,24 @@
+FROM node
+
+COPY server /opt/monitool/server/
+COPY client /opt/monitool/client/
+
+COPY package.json /opt/monitool/package.json
+COPY config.js /opt/monitool/config.js
+COPY gulpfile.js /opt/monitool/gulpfile.js
+
+WORKDIR /opt/monitool
+RUN npm install
+RUN node node_modules/gulp/bin/gulp.js build
+
+ENV PORT 8080
+ENV couchdb.url http://couchdb:5984
+ENV couchdb.bucket monitool
+ENV couchdb.host couchdb
+ENV couchdb.sessionBucket monitool-sessions
+ENV oauth.resource https://graph.windows.net
+
+ENTRYPOINT ["node", "/opt/monitool/server/app.js"]
+
+EXPOSE 8080
+
