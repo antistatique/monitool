@@ -116,13 +116,13 @@ module.exports = express.Router()
 				next();
 		},
 		
-		passport.authenticate('user_azure')
+		passport.authenticate('user_google', { scope: ['profile'] })
 	)
 
 	.get(
 		'/login-callback',
 		
-		passport.authenticate('user_azure', {
+		passport.authenticate('user_google', {
 			failureRedirect: '/'
 		}),
 		

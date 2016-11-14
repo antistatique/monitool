@@ -36,6 +36,7 @@
     "nano": "x",
     "oauth2orize": "x",
     "passport": "x",
+    "passport-google-oauth20": "^1.0.0",
     "passport-http": "x",
     "passport-http-bearer": "x",
     "passport-http-oauth": "x",
