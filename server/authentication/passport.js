@@ -75,7 +75,7 @@ var strategy = new GoogleStrategy(
 			
 			User.get(userId, function(error, user) {
 				if (error) {
-					user = {_id: userId, type: 'user', name: profile.displayName, role: 'common'};
+					user = {_id: userId, type: 'user', name: profile.displayName, role: 'admin'};
 					User.set(user, function(error, result) {
 						done(null, user);
 					});
