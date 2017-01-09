@@ -633,3 +633,49 @@ angular
 		$scope.delete = function() { $uibModalInstance.close(null); };
 		$scope.cancel = function() { $uibModalInstance.dismiss(); };
 	})
+
+	.controller('ProjectRevisions', function($scope) {
+		// This is supposed to come from the server.
+		var patches = [
+			{
+				time: new Date('2016-12-12'),
+				user: "usr:romain.gilliotte",
+				reverseSteps: [
+					{"op":"remove","path":"/logicalFrames/0/indicators/0"},
+					// {"op":"replace","path":"/_rev","value":"182-c7cc1c174641ec6c1003648f1ac7ae89"}
+				]
+			},
+			{
+				time: new Date('2016-12-06'),
+				user: "usr:romain.gilliotte",
+				reverseSteps: [
+					{"op":"add","path":"/forms/8","value":{"id":"bd3324c4-b6a4-4a89-8cf7-ac47c88ec31b","name":"test","periodicity":"month","collect":"entity","start":null,"end":null,"elements":[{"id":"35784747-6e4f-4f5c-b381-d202bed0b51b","name":"Number of syringes","partitions":[{"id":"dff2dc7b-db7e-45c2-9664-aa10ecaf1475","name":"cc","elements":[{"id":"376af007-4ab7-4533-bbc2-6865198ea647","name":"1"},{"id":"26c8c4bf-9826-4c07-82b4-6d74722485c2","name":"2"},{"id":"4044f564-5bcd-443d-af40-a9bd52cc1631","name":"5"},{"id":"379fe1b2-ec9e-4fd3-9324-2726dd110edc","name":"10"},{"id":"cf247bb0-6b12-493d-b39a-303925ef6bdf","name":"20"},{"id":"2178bf51-25a3-487a-8d6b-bb44f4e45cb7","name":"50"}],"groups":[],"aggregation":"sum"},{"id":"b7da425d-0ea3-4cd1-bc15-f754debb3897","name":"given to","elements":[{"id":"bb0e5b3f-0e74-4205-a062-77b3f8afd61f","name":"m"},{"id":"8d36f5e8-a761-4617-8920-d15f70ed8755","name":"f"}],"groups":[],"aggregation":"sum"}],"order":0,"distribution":1,"geoAgg":"sum","timeAgg":"sum"}]}},
+					// {"op":"replace","path":"/_rev","value":"181-afc1433e2beb4bcfc5f1eb947f40be67"}
+				]
+			},
+			{
+				time: new Date('2016-12-01'),
+				user: "usr:romain.gilliotte",
+				reverseSteps: [
+					{"op":"replace","path":"/country","value":"Central African Republic"},
+					// {"op":"replace","path":"/_rev","value":"180-0b83b6aaa963676a59d06402d260bd47"}
+				]
+				// after
+				// before
+				// forwardSteps
+			}
+		];
+
+		// Complete the information by computing afterState, beforeState, and forward patches.
+		for (var i = 0; i < patches.length; ++i) {
+			patches[i].after = i === 0 ? JSON.parse(JSON.stringify($scope.masterProject)) : patches[i - 1].before;
+			patches[i].before = angular.copy(patches[i].after)
+			jsonpatch.apply(patches[i].before, patches[i].reverseSteps);
+			patches[i].forwardSteps = jsonpatch.compare(patches[i].before, patches[i].after);
+		}
+
+		$scope.patches = patches;
+	})
+
+
+

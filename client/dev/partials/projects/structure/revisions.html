@@ -1,0 +1,33 @@
+<ol class="breadcrumb noprint">
+	<li ng-if="userCtx.type == 'user'"><a ui-sref="main.projects" translate="shared.projects"></a></li>
+	<li class="active" title="{{masterProject.name}}" ng-bind="masterProject.name|maxLength:50"></li>
+	<li class="active" translate="project.revisions"></li>
+</ol>
+
+<div class="alert alert-info" translate="project.revisions_info"></div>
+
+<legend translate="project.revisions"></legend>
+
+<table class="table table-bordered table-condensed">
+	<thead>
+		<tr>
+			<th style="width: 20%">Date / Heure</th>
+			<th style="width: 20%">Utilisateur</th>
+			<th>Modification apportées</th>
+		</tr>
+	</thead>
+	<tbody ng-repeat="patch in patches">
+		<tr>
+			<td>
+				{{patch.time|date}}<br/>
+				<a class="btn btn-default btn-xs">Revenir à cette version</a>
+			</td>
+			<td>{{patch.user}}</td>
+			<td>
+				<ul>
+					<li ng-repeat="desc in patch|formatPatch track by $index">{{desc}}</li>
+				</ul>
+			</td>
+		</tr>
+	</tbody>
+</table>

@@ -336,18 +336,6 @@ app.config(function($stateProvider, $urlRouterProvider) {
 		}
 	});
 
-	$stateProvider.state('main.project.structure.cross_cutting', {
-		url: '/cross-cutting',
-		templateUrl: 'partials/projects/structure/cross-cutting.html',
-		controller: 'ProjectCrossCuttingController',
-	});
-	
-	$stateProvider.state('main.project.structure.extra', {
-		url: '/extra',
-		templateUrl: 'partials/projects/structure/extra-indicators.html',
-		controller: 'ProjectExtraIndicators',
-	});
-
 	$stateProvider.state('main.project.structure.logical_frame_list', {
 		url: '/logical-frame',
 		templateUrl: 'partials/projects/structure/logframe-list.html',
@@ -360,12 +348,27 @@ app.config(function($stateProvider, $urlRouterProvider) {
 		controller: 'ProjectLogicalFrameEditController'
 	});
 
+	$stateProvider.state('main.project.structure.cross_cutting', {
+		url: '/cross-cutting',
+		templateUrl: 'partials/projects/structure/cross-cutting.html',
+		controller: 'ProjectCrossCuttingController',
+	});
+	
+	$stateProvider.state('main.project.structure.extra', {
+		url: '/extra',
+		templateUrl: 'partials/projects/structure/extra-indicators.html',
+		controller: 'ProjectExtraIndicators',
+	});
 
+	$stateProvider.state('main.project.structure.revisions', {
+		url: '/revisions',
+		templateUrl: 'partials/projects/structure/revisions.html',
+		controller: 'ProjectRevisions',
+	});
 
 	///////////////////////////
 	// Project Input
 	///////////////////////////
-
 
 	$stateProvider.state('main.project.input', {
 		abstract: true,
