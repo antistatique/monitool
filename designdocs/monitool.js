@@ -5,6 +5,16 @@ module.exports = {
 	_id: '_design/monitool',
 
 	views: {
+
+		revisions_by_project: {
+			map: function(doc) {
+				if (doc.type === 'revision') {
+					var id = doc._id.split(':');
+					emit(id[1]);
+				}
+			}.toString()
+		},
+
 		inputs_by_project_date: {
 			map: function(doc) {
 				if (doc.type === 'input')

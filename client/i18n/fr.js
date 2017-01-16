@@ -220,6 +220,122 @@ var FRENCH_TRANSLATION = {
 	},
 
 	project: {
+
+		revisions: "Historique",
+		revisions_info: "L'historique des modifications vous permet de consulter la liste des modifications faites sur la structure de votre projet.",
+
+		history: {
+			name_replace: "Renomme le project de <code>{{before}}</code> vers <code>{{after}}</code>",
+			start_replace: "Modifie la date de début du projet de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+			end_replace: "Modifie la date de fin du projet de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+			country_replace: "Modifie le pays du project de <code>{{before}}</code> vers <code>{{after}}</code>",
+			themes_add: "Ajoute une thématique",
+			themes_remove: "Retire une thématique",
+			themes_replace: "Remplace une thématique par une autre",
+
+			entities_add: "Crée le lieu de collecte <code>{{item.name}}</code>",
+			entities_remove: "Supprime le lieu de collecte <code>{{item.name}}</code>",
+			entities_move: "Déplace le lieu de collecte <code>{{item.name}}</code>",
+
+			entities_name_replace: "Renomme le lieu de collecte <code>{{before}}</code> en <code>{{after}}</code>",
+			entities_start_replace: "Change la date de début du lieu <code>{{entity.name}}</code> de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+			entities_end_replace: "Change la date de fin du lieu <code>{{entity.name}}</code> de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+
+			groups_add: "Crée le groupe <code>{{item.name}}</code>",
+			groups_remove: "Supprime le groupe <code>{{item.name}}</code>",
+			groups_name_replace: "Renomme le groupe <code>{{before}}</code> en <code>{{after}}</code>",
+			groups_members_add: "Ajoute le lieu de collecte <code>{{item.name}}</code> au groupe <code>{{group.name}}</code>",
+			groups_members_replace: "Remplace le lieu de collecte <code>{{before.name}}</code> par <code>{{after.name}}</code> dans le groupe <code>{{group.name}}</code>",
+			groups_members_remove: "Retire le lieu de collecte <code>{{item.name}}</code> du groupe <code>{{group.name}}</code>",
+
+			users_add: "Ajoute l'utilisateur <code>{{item.id || item.username}}</code> au projet",
+			users_move: "Déplace l'utilisateur <code>{{item.id || item.username}}</code>",
+			users_remove: "Supprime l'utilisateur <code>{{item.id || item.username}}</code> du projet",
+			users_name_replace: "Renomme le partenaire de <code>{{before}}</code> vers <code>{{after}}</code>",
+			users_password_replace: "Change le mot de passe de <code>{{user.id || user.username}}</code>",
+			users_role_replace: "Change le role de <code>{{user.id || user.username}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			users_entities_add: "Ajoute le lieu de collecte <code>{{item.name}}</code> à l'utilisateur <code>{{user.id || user.username}}</code>",
+			users_entities_remove: "Retire le lieu de collecte <code>{{item.name}}</code> de l'utilisateur <code>{{user.id || user.username}}</code>",
+
+			forms_add: "Crée la source de données <code>{{item.name}}</code>",
+			forms_remove: "Supprime la source de données <code>{{item.name}}</code>",
+			forms_name_replace: "Renomme la source de données <code>{{before}}</code> en <code>{{after}}</code>",
+			forms_periodicity_replace: "Change la périodicité de <code>{{form.name}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			forms_collect_replace: "Change le mode de collecte de <code>{{form.name}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			forms_start_replace: "Change la date de début de <code>{{form.name}}</code> de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+			forms_end_replace: "Change la date de fin de <code>{{form.name}}</code> de <code>{{before|date}}</code> vers <code>{{after|date}}</code>",
+
+			forms_entities_add: "Ajoute le lieu de collecte <code>{{item.name}}</code> à la source de données <code>{{form.name}}</code>",
+			forms_entities_remove: "Retire le lieu de collecte <code>{{item.name}}</code> de la source de données <code>{{form.name}}</code>",
+			forms_entities_replace: "Remplace le lieu de collecte <code>{{before.name}}</code> par <code>{{after.name}}</code> dans la source de données <code>{{form.name}}</code>",
+
+			forms_elements_add: "Crée la variable <code>{{item.name}}</code> dans <code>{{form.name}}</code>",
+			forms_elements_remove: "Supprime la variable <code>{{item.name}}</code> dans <code>{{form.name}}</code>",
+			forms_elements_move: "Déplace la variable <code>{{item.name}}</code> dans <code>{{form.name}}</code>",
+
+			forms_elements_name_replace: "Renomme la variable <code>{{before}}</code> en <code>{{after}}</code>",
+			forms_elements_geoAgg_replace: "Change la règle d'aggrégation (lieux) de <code>{{variable.name}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			forms_elements_timeAgg_replace: "Change la règle d'aggrégation (temps) de <code>{{variable.name}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			forms_elements_order_replace: "Change l'ordre des lignes et colonnes de <code>{{variable.name}}</code>",
+			forms_elements_distribution_replace: "Change la distribution des lignes et colonnes de <code>{{variable.name}}</code>",
+
+			forms_elements_partitions_add: "Crée la partition <code>{{item.name}}</code> dans <code>{{variable.name}}</code>",
+			forms_elements_partitions_remove: "Supprime la partition <code>{{item.name}}</code> de <code>{{variable.name}}</code>",
+			forms_elements_partitions_name_replace: "Renomme la partition <code>{{before}}</code> en <code>{{after}}</code> dans la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_aggregation_replace: "Change l'aggrégation de <code>{{before}}</code> vers <code>{{after}}</code> pour la variable <code>{{variable.name}}</code>",
+
+			forms_elements_partitions_elements_add: "Crée l'élément <code>{{item.name}}</code> dans la partition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_elements_remove: "Supprime l'élément <code>{{item.name}}</code> dans la partition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_elements_name_replace: "Renomme l'élément de partition <code>{{before}}</code> en <code>{{after}}</code> dans la partitition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+
+			forms_elements_partitions_groups_add: "Crée le groupe <code>{{item.name}}</code> dans la partition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_groups_remove: "Supprime le groupe <code>{{item.name}}</code> dans la partition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_groups_name_replace: "Renomme le groupe de partition <code>{{before}}</code> en <code>{{after}}</code> dans la partitition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_groups_members_add: "Ajoute le membre <code>{{item.name}}</code> au groupe de partition <code>{{group.name}}</code> dans la partitition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+			forms_elements_partitions_groups_members_remove: "Retire le membre <code>{{item.name}}</code> de groupe de partition <code>{{group.name}}</code> dans la partitition <code>{{partition.name}}</code> de la variable <code>{{variable.name}}</code>",
+
+			logicalFrames_add: "Crée le cadre logique <code>{{item.name}}</code>",
+			logicalFrames_remove: "Supprime le cadre logique <code>{{item.name}}</code>",
+			logicalFrames_move: "Déplace le cadre logique <code>{{item.name}}</code>",
+			logicalFrames_name_replace: "Renomme le cadre logique <code>{{before}}</code> en <code>{{after}}</code>",
+			logicalFrames_goal_replace: "Change l'objectif général <code>{{before}}</code> en <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+
+			logicalFrames_purposes_add: "Ajoute l'objectif spécifique <code>{{item.description}}</code> au cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_remove: "Supprime l'objectif spécifique <code>{{item.description}}</code> du cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_description_replace: "Change la description de l'objectif spécifique <code>{{before}}</code> en <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_assumptions_replace: "Change les hypothèses de l'objectif spécifique <code>{{purpose.description}}</code> de <code>{{before}}</code> en <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+
+			logicalFrames_purposes_outputs_add: "Ajoute le résultat <code>{{item.description}}</code> au cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_outputs_remove: "Supprime le résultat <code>{{item.description}}</code> du cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_outputs_description_replace: "Change la description du résultat <code>{{before}}</code> en <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_purposes_outputs_assumptions_replace: "Change les hypothèses du resultat <code>{{output.description}}</code> de <code>{{before}}</code> vers <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+
+			logicalFrames_indicators_add: "Crée l'indicateur <code>{{item.display}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_move: "Déplace l'indicateur <code>{{item.display}}</code> du cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_remove: "Supprime l'indicateur <code>{{item.display}}</code> du cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_baseline_replace: "Change la valeur initiale de l'indicateur <code>{{indicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_target_replace: "Change la cible de l'indicateur <code>{{indicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_display_replace: "Renomme l'indicateur <code>{{before}}</code> en <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_colorize_replace: "Change la colorisation de l'indicateur <code>{{indicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+			logicalFrames_indicators_computation_replace: "Change le calcul de l'indicateur <code>{{indicator.display}}</code> dans le cadre logique <code>{{logicalFrame.name}}</code>",
+
+			extraIndicators_add: "Crée l'indicateur annexé <code>{{item.display}}</code>",
+			extraIndicators_move: "Déplace l'indicateur annexé <code>{{item.display}}</code>",
+			extraIndicators_remove: "Supprime l'indicateur annexé <code>{{item.display}}</code>",
+			extraIndicators_baseline_replace: "Change la valeur initiale de l'indicateur annexé <code>{{extraIndicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			extraIndicators_target_replace: "Change la cible de l'indicateur annexé <code>{{extraIndicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			extraIndicators_display_replace: "Renomme l'indicateur annexé <code>{{before}}</code> en <code>{{after}}</code>",
+			extraIndicators_colorize_replace: "Change la colorisation de l'indicateur annexé <code>{{extraIndicator.display}}</code> de <code>{{before}}</code> vers <code>{{after}}</code>",
+			extraIndicators_computation_replace: "Change le calcul de l'indicateur annexé <code>{{extraIndicator.display}}</code>",
+
+			crossCutting_add: "Ajoute un indicateur transversal",
+			crossCutting_remove: "Supprime un indicateur transversal",
+			crossCutting_baseline_replace: "Change la valeur initiale d'un indicateur transversal de <code>{{before}}</code> vers <code>{{after}}</code>",
+			crossCutting_target_replace: "Change la cible d'un indicateur transversal de <code>{{before}}</code> vers <code>{{after}}</code>",
+			crossCutting_colorize_replace: "Change la colorisation d'un indicateur transversal de <code>{{before}}</code> vers <code>{{after}}</code>",
+			crossCutting_computation_replace: "Change le calcul d'un indicateur transversal",
+		},
+
 		all_elements: "Tout",
 		no_extra_indicators: "Aucune indicateur annexé n'a été créé. Cliquez sur \"Ajouter un indicateur\" pour en créer un!",
 		no_data_source: "<span style=\"font-style: italic\">Créez des sources de données pour pouvoir saisir</span>",

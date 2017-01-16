@@ -16,18 +16,14 @@
 			<th>Modification apportées</th>
 		</tr>
 	</thead>
-	<tbody ng-repeat="patch in patches">
+	<tbody ng-repeat="revision in ::revisions">
 		<tr>
 			<td>
-				{{patch.time|date}}<br/>
-				<a class="btn btn-default btn-xs">Revenir à cette version</a>
+				{{::revision.date|date:'medium'}}<br/>
+				<!-- <a class="btn btn-default btn-xs" ng-if="revision.reversable">Revenir à cette version</a> -->
 			</td>
-			<td>{{patch.user}}</td>
-			<td>
-				<ul>
-					<li ng-repeat="desc in patch|formatPatch track by $index">{{desc}}</li>
-				</ul>
-			</td>
+			<td>{{::revision.user}}</td>
+			<td ng-bind-html="::revision|formatPatch"></td>
 		</tr>
 	</tbody>
 </table>

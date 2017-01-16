@@ -1,6 +1,7 @@
 "use strict";
 
-var validator    = require('is-my-json-valid'),
+var jsonpatch    = require('fast-json-patch'),
+	validator    = require('is-my-json-valid'),
 	passwordHash = require('password-hash'),
 	ProjectStore = require('../store/project'),
 	Model        = require('./model'),
@@ -75,7 +76,7 @@ class Project extends Model {
 	getRole(user) {
 		if (user.type === 'partner')
 			return user.projectId !== this._id ? 'none' : user.role;
-		
+
 		else if (user.type === 'user') {
 			if (user.role === 'admin')
 				return 'owner';
@@ -94,58 +95,6 @@ class Project extends Model {
 	 */
 	getPartnerByUsername(username) {
 		return this.users.find(function(u) { return u.username === username });
-	}
-
-	/**
-	 * Take the previous version of the project, and copies all password hashes
-	 * from it (this allows not sending them to the client back and forth).
-	 * This is used when saving the project.
-	 */
-	copyUnchangedPasswords(oldProject) {
-		this.users.forEach(function(user) {
-			if (user.type === 'partner') {
-				// retrieve old user.
-				var oldUser = oldProject.getPartnerByUsername(user.username);
-
-				// copy hash or raise error
-				if (user.password === null) {
-					if (oldUser)
-						user.password = oldUser.password;
-					else
-						throw new Error('invalid_data');
-				}
-			}
-		});
-	}
-
-	/**
-	 * Take the previous version of the project, and compute all updates
-	 * to inputs that are needed to deal with the structural changes of the forms.
-	 */
-	computeInputsUpdates(oldProject) {
-		var changedFormsIds = [];
-
-		// Get all forms that existed before, and changed since last time.
-		this.forms.forEach(function(newForm) {
-			var oldForm = oldProject.getDataSourceById(newForm.id);
-
-			if (oldForm && oldForm.signature !== newForm.signature)
-				changedFormsIds.push(newForm.id)
-		});
-
-		// Get all forms that were deleted.
-		oldProject.forms.forEach(function(oldForm) {
-			if (!oldProject.getDataSourceById(oldForm.id))
-				changedFormsIds.push(oldForm.id);
-		});
-
-		var promises = changedFormsIds.map(dataSourceId => Input.storeInstance.listByDataSource(this._id, dataSourceId));
-		
-		return Promise.all(promises).then(function(inputs) {
-			inputs = inputs.reduce((m, e) => m.concat(e), []);
-			inputs.forEach(input => input.update(oldProject, this));
-			return inputs;
-		}.bind(this));
 	}
 
 	/**
@@ -169,13 +118,13 @@ class Project extends Model {
 
 	/**
 	 * Save the project.
-	 * 
+	 *
 	 * This method makes many checks do deal with the fact that there are no foreign keys nor update method.
 	 * 	- validate that all foreign keys exist.
 	 *	- copy the passwords that were not changed for partners.
 	 *	- update all inputs that need a change (depending on structural changes in data sources).
 	 */
-	save(skipChecks) {
+	save(skipChecks, user) {
 		// If we skip checks, because we know what we are doing, just delegate to parent class.
 		if (skipChecks)
 			return super.save(true);
@@ -190,23 +139,36 @@ class Project extends Model {
 				});
 			}.bind(this))
 
-			// Handle partner passwords & input structure
+			// Compute the list of documents that will need updating.
 			.then(function(oldProject) {
-				// If we are updating, copy old passwords from the old project
-				if (oldProject)
-					this.copyUnchangedPasswords(oldProject);
+				if (oldProject) {
+					// Early quit on revision mismatch to ensure that we won't leave the database in an inconsistent way with the bulk update.
+					if (oldProject._rev !== this._rev)
+						throw new Error('revision_mismatch');
 
-				// If we are updating the project, we need to update related inputs.
-				return oldProject ? this.computeInputsUpdates(oldProject) : [];
+					// Copy old passwords from the old project
+					this._copyUnchangedPasswords(oldProject);
+
+					// Compute list of documents that require updating (project + revision + inputs).
+					return this._computeInputsUpdates(oldProject).then(function(inputUpdates) {
+						return [this, this._computeRevision(oldProject, user)].concat(inputUpdates);
+					}.bind(this));
+				}
+				else {
+					if (this._rev)
+						throw new Error('revision_provided_at_creation');
+
+					return [this];
+				}
 			}.bind(this))
 
 			.then(function(updates) {
-				updates.push(this);
 
 				// FIXME
 				// Bulk operations are not really atomic in a couchdb database.
 				// if someone else is playing with the database at the same time, we might leave the database in an inconsistent state.
 				// This can be easily fixed http://stackoverflow.com/questions/29491618/transaction-like-update-of-two-documents-using-couchdb
+				// For now we assume that everything will work properly because we checked for revision mismatch just before.
 				return Project.storeInstance._callBulk({docs: updates});
 			}.bind(this))
 
@@ -215,7 +177,7 @@ class Project extends Model {
 				var projectResult = bulkResults.find(res => res.id === this._id);
 				if (projectResult.error)
 					throw new Error(projectResult.error);
-				
+
 				this._rev = projectResult.rev;
 				return this; // return updated document.
 			}.bind(this));
@@ -235,6 +197,71 @@ class Project extends Model {
 
 		return json;
 	}
+
+	/**
+	 * Take the previous version of the project, and copies all password hashes
+	 * from it (this allows not sending them to the client back and forth).
+	 * This is used when saving the project.
+	 */
+	_copyUnchangedPasswords(oldProject) {
+		this.users.forEach(function(user) {
+			if (user.type === 'partner') {
+				// retrieve old user.
+				var oldUser = oldProject.getPartnerByUsername(user.username);
+
+				// copy hash or raise error
+				if (user.password === null) {
+					if (oldUser)
+						user.password = oldUser.password;
+					else
+						throw new Error('invalid_data');
+				}
+			}
+		});
+	}
+
+	_computeRevision(oldProject, user) {
+		return {
+			_id: 'revision:' + this._id + ':' + this._rev,
+			type: "revision",
+			date: new Date().toISOString(),
+			user: user ? user.name : null,
+			reversePatch: jsonpatch.compare(this, oldProject),
+			reversable: true
+		};
+	}
+
+	/**
+	 * Take the previous version of the project, and compute all updates
+	 * to inputs that are needed to deal with the structural changes of the forms.
+	 */
+	_computeInputsUpdates(oldProject) {
+		var changedFormsIds = [];
+
+		// Get all forms that existed before, and changed since last time.
+		this.forms.forEach(function(newForm) {
+			var oldForm = oldProject.getDataSourceById(newForm.id);
+
+			if (oldForm && oldForm.signature !== newForm.signature)
+				changedFormsIds.push(newForm.id)
+		});
+
+		// Get all forms that were deleted.
+		oldProject.forms.forEach(function(oldForm) {
+			if (!oldProject.getDataSourceById(oldForm.id))
+				changedFormsIds.push(oldForm.id);
+		});
+
+		var promises = changedFormsIds.map(dataSourceId => Input.storeInstance.listByDataSource(this._id, dataSourceId));
+
+		return Promise.all(promises).then(function(inputs) {
+			inputs = inputs.reduce((m, e) => m.concat(e), []);
+			inputs.forEach(input => input.update(oldProject, this));
+			return inputs;
+		}.bind(this));
+	}
+
+
 
 }
 

@@ -93,6 +93,11 @@ module.exports = express.Router()
 			.then(response.jsonPB, response.jsonErrorPB);
 	})
 
+	.get('/project/:id/revisions', function(request, response) {
+		Project.storeInstance.listRevisions(request.params.id)
+			.then(response.jsonPB, response.jsonErrorPB);
+	})
+
 	/**
 	 * Save a project
 	 */
@@ -120,7 +125,8 @@ module.exports = express.Router()
 				}
 			)
 			.then(function() {
-				return new Project(request.body).save();
+				// saving the project need to user to create a revision
+				return new Project(request.body).save(false, request.user);
 			})
 			.then(p => p.toAPI())
 			.then(response.jsonPB, response.jsonErrorPB);

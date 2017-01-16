@@ -47,6 +47,7 @@ angular.module(
 		// When master changes, update menu elements
 		$scope.$watch('masterProject', function() {
 			$scope.projectReadyForReporting = $scope.masterProject.isReadyForReporting();
+			$scope.revision = $scope.masterProject._rev ? $scope.masterProject._rev.substring(0, $scope.masterProject._rev.indexOf('-')) : 0;
 		}, true);
 
 		$scope.cloneProject = function() {

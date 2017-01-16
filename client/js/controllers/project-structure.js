@@ -9,7 +9,7 @@ angular
 
 
 	/**
-	 * Controller used by "main.project.structure" state.
+	 * Abstract controller used by "main.project.structure" state.
 	 *
 	 * It handles:
 	 * 		- A warning when the user try to change current page without saving changes.
@@ -634,47 +634,165 @@ angular
 		$scope.cancel = function() { $uibModalInstance.dismiss(); };
 	})
 
-	.controller('ProjectRevisions', function($scope) {
-		// This is supposed to come from the server.
-		var patches = [
-			{
-				time: new Date('2016-12-12'),
-				user: "usr:romain.gilliotte",
-				reverseSteps: [
-					{"op":"remove","path":"/logicalFrames/0/indicators/0"},
-					// {"op":"replace","path":"/_rev","value":"182-c7cc1c174641ec6c1003648f1ac7ae89"}
-				]
-			},
-			{
-				time: new Date('2016-12-06'),
-				user: "usr:romain.gilliotte",
-				reverseSteps: [
-					{"op":"add","path":"/forms/8","value":{"id":"bd3324c4-b6a4-4a89-8cf7-ac47c88ec31b","name":"test","periodicity":"month","collect":"entity","start":null,"end":null,"elements":[{"id":"35784747-6e4f-4f5c-b381-d202bed0b51b","name":"Number of syringes","partitions":[{"id":"dff2dc7b-db7e-45c2-9664-aa10ecaf1475","name":"cc","elements":[{"id":"376af007-4ab7-4533-bbc2-6865198ea647","name":"1"},{"id":"26c8c4bf-9826-4c07-82b4-6d74722485c2","name":"2"},{"id":"4044f564-5bcd-443d-af40-a9bd52cc1631","name":"5"},{"id":"379fe1b2-ec9e-4fd3-9324-2726dd110edc","name":"10"},{"id":"cf247bb0-6b12-493d-b39a-303925ef6bdf","name":"20"},{"id":"2178bf51-25a3-487a-8d6b-bb44f4e45cb7","name":"50"}],"groups":[],"aggregation":"sum"},{"id":"b7da425d-0ea3-4cd1-bc15-f754debb3897","name":"given to","elements":[{"id":"bb0e5b3f-0e74-4205-a062-77b3f8afd61f","name":"m"},{"id":"8d36f5e8-a761-4617-8920-d15f70ed8755","name":"f"}],"groups":[],"aggregation":"sum"}],"order":0,"distribution":1,"geoAgg":"sum","timeAgg":"sum"}]}},
-					// {"op":"replace","path":"/_rev","value":"181-afc1433e2beb4bcfc5f1eb947f40be67"}
-				]
-			},
-			{
-				time: new Date('2016-12-01'),
-				user: "usr:romain.gilliotte",
-				reverseSteps: [
-					{"op":"replace","path":"/country","value":"Central African Republic"},
-					// {"op":"replace","path":"/_rev","value":"180-0b83b6aaa963676a59d06402d260bd47"}
-				]
-				// after
-				// before
-				// forwardSteps
+	.controller('ProjectRevisions', function($scope, revisions) {
+
+		/**
+		 * Compare two arrays of objects, and create remove, add and move operations
+		 * to patch from the first to the second.
+		 */
+		var preCompareArrayOfObjects = function(before, after, changes, prefix, hashFunction) {
+			hashFunction = hashFunction || function(obj) { return obj.id; };
+			var beforeIds = before.map(hashFunction), afterIds = after.map(hashFunction);
+
+			// start by removing items
+			for (var beforeIndex = 0; beforeIndex < beforeIds.length; ++beforeIndex) {
+				var id = beforeIds[beforeIndex], afterIndex = afterIds.indexOf(id);
+
+				if (afterIndex === -1) {
+					// element was removed
+					beforeIds.splice(beforeIndex, 1);
+					before.splice(beforeIndex, 1);
+					changes.push({op: 'remove', path: prefix + beforeIndex});
+					beforeIndex--; // we need to recheck the same place in the table.
+				}
 			}
-		];
+
+			// add missing items at the end
+			for (var afterIndex = 0; afterIndex < afterIds.length; ++afterIndex) {
+				var id = afterIds[afterIndex], beforeIndex = beforeIds.indexOf(id);
+
+				if (beforeIndex === -1) {
+					// element was added
+					beforeIds.push(id);
+					before.push(after[afterIndex]);
+					changes.push({op: 'add', path: prefix + beforeIds.length, value: after[afterIndex]});
+				}
+			}
+
+			// reorder items
+			for (var afterIndex = 0; afterIndex < afterIds.length; ++afterIndex) {
+				var id = afterIds[afterIndex], beforeIndex = beforeIds.indexOf(id);
+
+				if (afterIndex !== beforeIndex) {
+					// vire l'item de before
+					var item = before.splice(beforeIndex, 1)[0];
+					beforeIds.splice(beforeIndex, 1);
+
+					// le remet au bon endroit
+					before.splice(afterIndex, 0, item);
+					beforeIds.splice(afterIndex, 0, id);
+					changes.push({op: 'move', from: prefix + beforeIndex, path: prefix + afterIndex})
+				}
+			}
+		};
+
+		// We can't use jsonpatch.compare to generate human readable patches
+		// because it's not smart enougth to see when element moved
+		var compare = function(before, after) {
+			before = JSON.parse(angular.toJson(before)); // clone
+
+			var changes = [];
+			preCompareArrayOfObjects(before.entities, after.entities, changes, '/entities/');
+			preCompareArrayOfObjects(before.groups, after.groups, changes, '/groups/');
+			preCompareArrayOfObjects(before.users, after.users, changes, '/users/', function(obj) {
+				return obj.id || obj.username;
+			});
+			preCompareArrayOfObjects(before.forms, after.forms, changes, '/forms/');
+
+			preCompareArrayOfObjects(before.extraIndicators, after.extraIndicators, changes, '/extraIndicators/', function(ind) {
+				return ind.display;
+			});
+
+			preCompareArrayOfObjects(before.logicalFrames, after.logicalFrames, changes, '/logicalFrames/', function(lf) {
+				return lf.name;
+			});
+
+			// at this point it is safe to assume that before and after have the same forms
+			for (var formIndex = 0; formIndex < before.forms.length; ++formIndex) {
+				preCompareArrayOfObjects(
+					before.forms[formIndex].elements,
+					after.forms[formIndex].elements,
+					changes,
+					'/forms/' + formIndex + '/elements/'
+				);
+
+				for (var elementIndex = 0; elementIndex < before.forms[formIndex].elements.length; ++elementIndex) {
+					preCompareArrayOfObjects(
+						before.forms[formIndex].elements[elementIndex].partitions,
+						after.forms[formIndex].elements[elementIndex].partitions,
+						changes,
+						'/forms/' + formIndex + '/elements/' + elementIndex + '/partitions/'
+					);
+
+					if (before.forms[formIndex].elements[elementIndex].groups && after.forms[formIndex].elements[elementIndex].groups) {
+						preCompareArrayOfObjects(
+							before.forms[formIndex].elements[elementIndex].groups,
+							after.forms[formIndex].elements[elementIndex].groups,
+							changes,
+							'/forms/' + formIndex + '/elements/' + elementIndex + '/groups/'
+						);
+					}
+				}
+			}
+
+			for (var logFrameId = 0; logFrameId < before.logicalFrames.length; ++logFrameId) {
+				preCompareArrayOfObjects(
+					before.logicalFrames[logFrameId].indicators,
+					after.logicalFrames[logFrameId].indicators,
+					changes,
+					'/logicalFrames/' + logFrameId + '/indicators/',
+					function(ind) { return ind.display; }
+				);
+
+				for (var purposeId = 0; purposeId < before.logicalFrames[logFrameId].purposes.length; ++purposeId) {
+					preCompareArrayOfObjects(
+						before.logicalFrames[logFrameId].purposes[purposeId].indicators,
+						after.logicalFrames[logFrameId].purposes[purposeId].indicators,
+						changes,
+						'/logicalFrames/' + logFrameId + '/purposes/' + purposeId + '/indicators/',
+						function(ind) { return ind.display; }
+					);
+
+					for (var outputId = 0; outputId < before.logicalFrames[logFrameId].purposes[purposeId].outputs.length; ++outputId) {
+						preCompareArrayOfObjects(
+							before.logicalFrames[logFrameId].purposes[purposeId].outputs[outputId].indicators,
+							after.logicalFrames[logFrameId].purposes[purposeId].outputs[outputId].indicators,
+							changes,
+							'/logicalFrames/' + logFrameId + '/purposes/' + purposeId + '/outputs/' + outputId + '/indicators/',
+							function(ind) { return ind.display; }
+						);
+					}
+				}
+			}
+
+			return changes.concat(jsonpatch.compare(before, after));
+		};
+
+		// Order revisions
+		revisions.sort(function(revA, revB) {
+			var a = parseInt(revA._id.substring(46, revA._id.lastIndexOf('-'))),
+				b = parseInt(revB._id.substring(46, revB._id.lastIndexOf('-')));
+			return a < b ? 1 : -1;
+		});
+
+		var reversable = true;
 
 		// Complete the information by computing afterState, beforeState, and forward patches.
-		for (var i = 0; i < patches.length; ++i) {
-			patches[i].after = i === 0 ? JSON.parse(JSON.stringify($scope.masterProject)) : patches[i - 1].before;
-			patches[i].before = angular.copy(patches[i].after)
-			jsonpatch.apply(patches[i].before, patches[i].reverseSteps);
-			patches[i].forwardSteps = jsonpatch.compare(patches[i].before, patches[i].after);
+		for (var i = 0; i < revisions.length; ++i) {
+			// the first non reversable revision break the whole chain.
+			revisions[i].reversable = reversable = reversable && revisions[i].reversable;
+
+			// compute before and after state
+			revisions[i].after = i === 0 ? JSON.parse(angular.toJson($scope.masterProject)) : revisions[i - 1].before;
+			revisions[i].before = angular.copy(revisions[i].after)
+			jsonpatch.apply(revisions[i].before, revisions[i].reversePatch);
+
+			// compute forwardPatch (needed to compute a human readable diff).
+			revisions[i].forwardPatch = compare(revisions[i].before, revisions[i].after);
+			// console.log(revisions[i].forwardPatch)
 		}
 
-		$scope.patches = patches;
+		$scope.revisions = revisions;
 	})
 
 

@@ -139,10 +139,14 @@ app.config(function($httpProvider) {
 		};
 
 		var parseDatesRec = function(model) {
-			if (typeof model === 'string' && model.match(/^\d\d\d\d\-\d\d\-\d\d$/)) {
-				// Using new Date('2010-01-01') <=> new Date('2010-01-01T00:00:00Z')
-				// => we want a date that works in UTC.
-				return new Date(model + 'T00:00:00Z');
+			if (typeof model === 'string') {
+				if (model.match(/^\d\d\d\d\-\d\d\-\d\d$/))
+					// Using new Date('2010-01-01') <=> new Date('2010-01-01T00:00:00Z')
+					// => we want a date that works in UTC.
+					return new Date(model + 'T00:00:00Z');
+
+				if (model.match(/^\d\d\d\d\-\d\d\-\d\dT\d\d:\d\d:\d\dZ$/))
+					return new Date(model);
 			}
 
 			if (Array.isArray(model)) {
@@ -364,6 +368,12 @@ app.config(function($stateProvider, $urlRouterProvider) {
 		url: '/revisions',
 		templateUrl: 'partials/projects/structure/revisions.html',
 		controller: 'ProjectRevisions',
+		resolve: {
+			revisions: function($resource, $stateParams) {
+				var Revision = $resource('/resources/project/:projectId/revisions', {projectId: $stateParams.projectId});
+				return Revision.query().$promise;
+			}
+		}
 	});
 
 	///////////////////////////

@@ -86,95 +86,123 @@ angular.module('monitool.filters.shared', [])
 		};
 	})
 
-	.filter('formatPatch', function() {
-
-		var resolvePath = function(obj, path) {
-			path.substring(1).split('/').forEach(function(part) {
-				obj = obj[part];
-			});
-
-			return obj;
-		};
-
-		var formatOperation = {
-			add: function(patch, operation) {
-				if (operation.path.match(/^\/themes\/\d+$/))
-					return "Ajoute la thématique " + operation.value;
-				else if (operation.path.match(/^\/entities\/\d+$/))
-					return "Crée le site " + operation.value.name;
-				else if (operation.path.match(/^\/groups\/\d+$/))
-					return "Crée le groupe " + operation.value.name;
-				else if (operation.path.match(/^\/groups\/\d+\/members\/\d+$/)) {
-					var groupIndex = operation.path.match(/^\/groups\/(\d+)\/members\/\d+$/)[1];
-					return "Ajoute le site " + operation.value + " au groupe " + patch.before.groups[groupIndex].name;
-				}
-				else if (operation.path.match(/^\/users\/\d+$/)) {
-					if (operation.value.id)
-						return "Ajoute l'utilisateur MDM " + operation.value.id;
-					else
-						return "Crée le partenaire " + operation.value.username;
-				}
-				else if (operation.path.match(/^\/users\/\d+\/entities\/\d+$/)) {
-					var userIndex = operation.path.match(/^\/users\/(\d+)\/entities\/\d+$/)[1],
-						user = patch.before.users[userIndex];
-
-					if (user.id)
-						return "Ajoute le site " + operation.value + " à l'utilisateur " + user.id;
-					else
-						return "Ajoute le site " + operation.value + " au partenaire " + user.username;
-				}
-				else if (operation.path.match(/^\/forms\/\d+$/))
-					return "Crée la source de données " + operation.value.name;
-				else if (operation.path.match(/^\/forms\/\d+\/entities\/\d+$/)) {
-					var formIndex = operation.path.match(/^\/forms\/(\d+)\/entities\/\d+$/)[1],
-						form = patch.before.forms[userIndex];
-
-					return "Ajoute le site " + operation.value + " à la source de données " + form.name;
-				}
-				else if (operation.path.match(/^\/forms\/\d+\/elements\/\d+$/)) {
-					var formIndex = operation.path.match(/^\/forms\/(\d+)\/elements\/\d+$/)[1],
-						form = patch.before.forms[userIndex];
-
-					return "Ajoute la variable " + operation.value.name + " à la source de données " + form.name;
-				}
-				else {
-					return "Autre création";
-				}
-
-
-				// une thematique
-				// un site, un groupe, un membre dans un groupe
-				// un utilisateur, un site à un utilisateur
-				// une data source, un site dans une data source, une variable, une partition, un element de partition, un groupe de partition
-				// un cadre logique, un indicateur dans un cadre logique, un objectif specifique, un resultat, un parametre dans une formule
-				// un indicateur transversal, un parametre d'indicateur transversal
-				// un indicateur extra, un parametre d'indicateur extra
-
-
-			},
-			replace: function(patch, operation) {
-				var previousValue = resolvePath(patch.before, operation.path),
-					newValue = operation.value;
-
-				if (operation.path === '/name')
-					return "Renomme le projet de <code>" + previousValue + "</code> vers <code>" + operation.value + "</code>";
-				else if (operation.path === "/start")
-					return "Modifie la date de début du projet: " + operation.value;
-				else if (operation.path === '/end')
-					return "Modifie la date de fin du projet: " + operation.value;
-				else if (operation.path === '/country')
-					return "Modifie le pays de <code>" + previousValue + "</code> vers <code>" + operation.value + "</code>";
-				else
-					return "Autre modification";
-			},
-			remove: function(patch, operation) {
-
-			}
-		};
+	.filter('formatPatch', function($sce, $filter) {
+		var translate = $filter('translate');
 
 		return function(patch) {
-			return patch.forwardSteps.map(function(operation) {
-				return formatOperation[operation.op](patch, operation);
-			});
-		}
+			var before = JSON.parse(JSON.stringify(patch.before)),
+				after  = JSON.parse(JSON.stringify(patch.before));
+
+			var alreadySeen = {};
+
+			var result = '<ul>';
+			for (var i = 0; i < patch.forwardPatch.length; ++i) {
+				var operation = patch.forwardPatch[i];
+
+				jsonpatch.apply(after, [operation]);
+
+				// let's make some magic.
+				var edited_field = operation.path.substring(1).replace(/\/\d+\//g, '_').replace(/\/\d+$/, ''),
+					translation_data = {};//handlers[key](match, before, after, operation);
+
+				var splpath = operation.path.split('/').slice(1);
+				
+				var currentItem = before;
+				for (var j = 1; j < splpath.length - 1; j += 2) {
+					var name = splpath[j - 1], id = splpath[j];
+
+					currentItem = currentItem[name][id];
+
+					if (name === 'entities')
+						name = 'entity';
+					else if (name === 'elements' && j < 5)
+						name = 'variable';
+					else 
+						name = name.substring(0, name.length - 1);
+					
+					translation_data[name] = currentItem;
+				}
+				
+				if (operation.op === 'add') {
+					translation_data.item = operation.value;
+
+					// it's an entity => return the entity
+					if (edited_field === 'groups_members' || edited_field === 'forms_entities')
+						translation_data.item = before.entities.find(function(e) { return e.id === translation_data.item; });
+
+					if (edited_field === 'forms_elements_partitions_groups_members')
+						translation_data.item = translation_data.partition.elements.find(function(e) {return e.id == translation_data.item; });
+				}
+				else if (operation.op === 'replace') {
+					translation_data.after = operation.value;
+					translation_data.before = before;
+					for (var j = 0; j < splpath.length; j += 1)
+						translation_data.before = translation_data.before[splpath[j]];
+
+					if (edited_field === 'groups_members' || edited_field === 'forms_entities') {
+						translation_data.before = before.entities.find(function(e) { return e.id === translation_data.before; });
+						translation_data.after = before.entities.find(function(e) { return e.id === translation_data.after; });
+					}
+
+					if (edited_field === 'forms_elements_partitions_groups_members') {
+						translation_data.before = translation_data.partition.elements.find(function(e) {return e.id == translation_data.before; });
+						translation_data.after = translation_data.partition.elements.find(function(e) {return e.id == translation_data.after; });
+					}
+				}
+				else if (operation.op === 'remove') {
+					translation_data.item = before;
+					for (var j = 0; j < splpath.length; j += 1)
+						translation_data.item = translation_data.item[splpath[j]];
+
+					if (edited_field === 'groups_members' || edited_field === 'forms_entities')
+						translation_data.item = before.entities.find(function(e) { return e.id === translation_data.item; });
+
+					if (edited_field === 'forms_elements_partitions_groups_members')
+						translation_data.item = translation_data.partition.elements.find(function(e) {return e.id == translation_data.item; });
+				}
+				else if (operation.op === 'move') {
+					translation_data.item = before;
+					
+					var splpath2 = operation.from.split('/').slice(1);
+					for (var j = 0; j < splpath2.length; j += 1)
+						translation_data.item = translation_data.item[splpath2[j]];
+				}
+
+				// hack around indicator translation strings to factorize translations.
+				var translation_string;
+
+				var crossCuttingMatch = edited_field.match(/^crossCutting\/.{36}(.*)$/);
+				if (crossCuttingMatch)
+					// the ternary here is to handle crosscutting add/remove
+					edited_field = 'crossCutting' + (crossCuttingMatch[1].length ? '_' + crossCuttingMatch[1].substring(1) : '');
+
+				var indicatorMatch = edited_field.match(/^logicalFrames.*indicators(.*)$/);
+				if (indicatorMatch)
+					// truncate purposes and outputs
+					edited_field = 'logicalFrames_indicators' + indicatorMatch[1];
+
+				var computationMatch = edited_field.match('^(.*)_computation');
+				if (computationMatch) {
+					// truncate everything after computation
+					edited_field = computationMatch[1] + '_computation';
+					translation_string = edited_field + '_replace';
+				}
+				else {
+					translation_string = edited_field + '_' + operation.op;
+				}
+
+				var str = translate('project.history.' + translation_string, translation_data);
+
+				if (!alreadySeen[str])
+					result += '<li>' + str + '</li>';
+				alreadySeen[str] = true;
+				jsonpatch.apply(before, [operation]);
+			}
+
+			result += '</ul>';
+
+			return $sce.trustAsHtml(result);
+		};
 	})
+
+
