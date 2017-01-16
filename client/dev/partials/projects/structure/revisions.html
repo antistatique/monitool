@@ -23,7 +23,7 @@
 				{{::revision.date|date:'medium'}}<br/>
 			</td>
 			<td>{{::revision.user}}</td>
-			<td ng-bind-html="::revision|formatPatch"></td>
+			<td ng-bind-html="::revision|humanizePatch"></td>
 			<td><a class="btn btn-default btn-xs" ng-if="revision.reversable">Revenir à cette version</a></td>
 		</tr>
 	</tbody>

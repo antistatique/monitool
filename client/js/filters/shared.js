@@ -86,7 +86,7 @@ angular.module('monitool.filters.shared', [])
 		};
 	})
 
-	.filter('formatPatch', function($sce, $filter) {
+	.filter('humanizePatch', function($sce, $filter) {
 		var translate = $filter('translate');
 
 		return function(patch) {
