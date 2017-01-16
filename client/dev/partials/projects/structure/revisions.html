@@ -14,16 +14,17 @@
 			<th style="width: 20%">Date / Heure</th>
 			<th style="width: 20%">Utilisateur</th>
 			<th>Modification apportées</th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody ng-repeat="revision in ::revisions">
 		<tr>
 			<td>
 				{{::revision.date|date:'medium'}}<br/>
-				<!-- <a class="btn btn-default btn-xs" ng-if="revision.reversable">Revenir à cette version</a> -->
 			</td>
 			<td>{{::revision.user}}</td>
 			<td ng-bind-html="::revision|formatPatch"></td>
+			<td><a class="btn btn-default btn-xs" ng-if="revision.reversable">Revenir à cette version</a></td>
 		</tr>
 	</tbody>
 </table>
