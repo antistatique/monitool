@@ -48,6 +48,7 @@
     "jade": "x",
     "nano": "x",
     "oauth2orize": "x",
+    "olapcube": "git+ssh://git@github.com/medecins-du-monde/olap.js.git",
     "passport": "x",
     "passport-http": "x",
     "passport-http-bearer": "x",
