@@ -79,6 +79,23 @@ class Input extends Model {
 		return newValues;
 	}
 
+	fillCube(cube) {
+		let dimensionElementIds = [];
+
+		dimensionElementIds.push(this.period);
+		if (this.entity !== 'none')
+			dimensionElementIds.push(this.entity);
+
+		cube.setValues(dimensionElementIds, this.values[cube.id]);
+	}
+
+	fillCubeCollection(cubeCollection) {
+		for (var variableId in this.values) {
+			let cube = cubeCollection.getCube(variableId);
+			this.fillCube(cube);
+		}
+	}
+
 	/**
 	 * When a project changes, update the content of this input's values.
 	 */
@@ -106,7 +123,7 @@ class Input extends Model {
 			if (!oldVariable || oldVariable.signature !== newVariable.signature)
 				newInputValues[newVariable.id] = this._computeUpdatedValuesKey(oldVariable, newVariable);
 		}, this);
-		
+
 		this.values = newInputValues;
 
 		return true;

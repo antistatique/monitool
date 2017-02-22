@@ -14,22 +14,25 @@ module.exports = express.Router()
 		if (request.user.type === 'partner' && request.params.id !== request.user.projectId)
 			return response.jsonError(new Error('forbidden'));
 
-		Promise
-			.all([
-				Project.storeInstance.get(request.params.id),
-				Input.storeInstance.listByProject(request.params.id)
-			])
-			.then(
-				function(results) {
-					response.json({
-						error: false,
-						type: 'cubes',
-						projectId: results[0]._id,
-						cubes: CubeCollection.fromProject(results[0], results[1]).serialize()
-					});
-				},
-				response.jsonErrorPB
-			);
+		Promise.all([
+			Project.storeInstance.get(request.params.id),
+			Input.storeInstance.listByProject(request.params.id)
+		]).then(
+			function(results) {
+				let project = results[0], inputs = results[1];
+
+				var cubeCollection = project.createCubeCollection();
+				inputs.forEach(i => i.fillCubeCollection(cubeCollection))
+
+				response.json({
+					error: false,
+					type: 'cubes',
+					projectId: results[0]._id,
+					cubes: cubeCollection.serialize()
+				});
+			},
+			response.jsonErrorPB
+		);
 	})
 
 	/**
@@ -71,7 +74,10 @@ module.exports = express.Router()
 				var result = {};
 				for (var i = 0; i < projects.length; ++i) {
 					var project = projects[i], inputs = inputsByProject[i];
-					result[project._id] = CubeCollection.fromProject(project, inputs).serialize();
+					var cubeCollection = project.createCubeCollection();
+					inputs.forEach(i => i.fillCubeCollection(cubeCollection));
+
+					result[project._id] = cubeCollection.serialize();
 				}
 				response.json({type: 'cubes', cubes: result});
 			},

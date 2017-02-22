@@ -4,7 +4,6 @@ var validator    = require('is-my-json-valid'),
 	passwordHash = require('password-hash'),
 	ProjectStore = require('../store/project'),
 	Model        = require('./model'),
-	DataSource   = require('./data-source'),
 	Indicator    = require('./indicator'),
 	Input        = require('./input'),
 	Theme        = require('./theme'),
@@ -12,6 +11,111 @@ var validator    = require('is-my-json-valid'),
 
 var validate = validator(schema),
 	storeInstance = new ProjectStore();
+
+
+class Variable {
+
+	constructor(data) {
+		Object.assign(this, data);
+	}
+
+	/**
+	 * Signature that changes when the storage of this variable changes.
+	 */
+	get signature() {
+		// the order of partition elements matters => to not sort!
+		return JSON.stringify(
+			this.partitions.map(function(partition) {
+				return [partition.id].concat(
+					partition.elements.map(function(partitionElement) {
+						return partitionElement.id;
+					})
+				);
+			})
+		);
+	}
+
+	/**
+	 * Number of fields this variable's storage.
+	 */
+	get numValues() {
+		return this.partitions.reduce((m, p) => m * p.elements.length, 1);
+	}
+
+
+	createCube() {
+		let dimensions = [];
+
+		// Create time dimension
+		let timeDim = Dimension.createTime('time', this.timeAgg, this._dataSource.startDate, this._dataSource.endDate, this._dataSource.periodicity);
+		dimensions.push(timeDim);
+
+		// Create geo dimension (if relevant)
+		if (this._dataSource.collect !== 'project') {
+			let items = this._dataSource._project.entities.map(e => e.id),
+				extraGroups = {};
+			this._dataSource._project.groups.forEach(g => extraGroups[g.id] = g.members);
+
+			let siteDim = new Dimension('entity', this.geoAgg, items, extraGroups);
+			dimensions.push(siteDim);
+		}
+
+		// Create partitions dimensions
+		for (var partition of this.partitions) {
+			var items = partition.element.map(e => e.id),
+				extraGroups = {};
+
+			partition.groups.forEach(g => extraGroups[g.id] = g.members);
+
+			let dimension = new Dimension(partition.id, partition.aggregation, items, extraGroups);
+			dimensions.push(dimension);
+		}
+
+		return new Cube(this.id, dimensions);
+	}
+}
+
+
+class DataSource {
+
+	constructor(data) {
+		Object.assign(this, data);
+		this.elements = this.elements.map(el => new Variable(el));
+	}
+
+	/**
+	 * Signature of this variable
+	 * The signature is a string with no special meaning that changes when the way to store this variable in
+	 * inputs will change.
+	 * It is used to know when it is needed to update inputs.
+	 */
+	get signature() {
+		return JSON.stringify(
+			this.elements.map(function(element) {
+				// the order of partitions matters => to not sort!
+				return [element.id, element.signature];
+				// the order of elements does not matters => sort by id to avoid rewriting all inputs for nothing.
+			}).sort(function(el1, el2) { return el1[0].localeCompare(el2[0]); })
+		);
+	}
+
+	get realStartDate() {
+		throw new Error("Implement me");
+	}
+
+	get realEndDate() {
+		throw new Error("Implement me");
+	}
+
+	/**
+	 * Retrieve a variable by id
+	 */
+	getVariableById(id) {
+		return this.elements.find(el => el.id === id);
+	}
+
+}
+
 
 class Project extends Model {
 
@@ -45,6 +149,18 @@ class Project extends Model {
 		});
 	}
 
+	createCubeCollection() {
+		var cubes = [];
+
+		this.forms.forEach(function(form) {
+			form.elements.forEach(function(element) {
+				cubes.push(element.createCube());
+			});
+		});
+
+		return new CubeCollection(cubes);
+	}
+
 	/**
 	 * Retrieve a datasource by id.
 	 */
@@ -75,7 +191,7 @@ class Project extends Model {
 	getRole(user) {
 		if (user.type === 'partner')
 			return user.projectId !== this._id ? 'none' : user.role;
-		
+
 		else if (user.type === 'user') {
 			if (user.role === 'admin')
 				return 'owner';
@@ -140,7 +256,7 @@ class Project extends Model {
 		});
 
 		var promises = changedFormsIds.map(dataSourceId => Input.storeInstance.listByDataSource(this._id, dataSourceId));
-		
+
 		return Promise.all(promises).then(function(inputs) {
 			inputs = inputs.reduce((m, e) => m.concat(e), []);
 			inputs.forEach(input => input.update(oldProject, this));
@@ -169,7 +285,7 @@ class Project extends Model {
 
 	/**
 	 * Save the project.
-	 * 
+	 *
 	 * This method makes many checks do deal with the fact that there are no foreign keys nor update method.
 	 * 	- validate that all foreign keys exist.
 	 *	- copy the passwords that were not changed for partners.
@@ -215,7 +331,7 @@ class Project extends Model {
 				var projectResult = bulkResults.find(res => res.id === this._id);
 				if (projectResult.error)
 					throw new Error(projectResult.error);
-				
+
 				this._rev = projectResult.rev;
 				return this; // return updated document.
 			}.bind(this));
