@@ -128,6 +128,42 @@ angular.module('monitool.directives.reporting', [])
 		};
 	})
 
+	.directive('baselineField', function() {
+		return {
+			scope: false,
+			link: function($scope, element, attributes, controller) {	
+				$scope.$watch(attributes.reportingField || 'row', function(row) {
+					if (row && row.colorization && typeof row.colorization.baseline === "number") {
+						element.html(row.colorization.baseline + (row.unit || ''));
+						element.css('background-color', '');
+					}
+					else {
+						element.html('');
+						element.css('background-color', '#eee');
+					}
+				});
+			}
+		};
+	})
+
+	.directive('targetField', function() {
+		return {
+			scope: false,
+			link: function($scope, element, attributes, controller) {	
+				$scope.$watch(attributes.reportingField || 'row', function(row) {
+					if (row && row.colorization && typeof row.colorization.target === "number") {
+						element.html(row.colorization.target + (row.unit || ''));
+						element.css('background-color', '');
+					}
+					else {
+						element.html('');
+						element.css('background-color', '#eee');
+					}
+				});
+			}
+		};
+	})
+
 	.directive('reportingField', function() {
 		return {
 			scope: false,
