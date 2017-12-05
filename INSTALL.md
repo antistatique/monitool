@@ -133,6 +133,20 @@ We now need to create a configuration file
 		}
 	}
 
+You need also to **create the training user** in your local database :
+1. Be sure CouchDB is launched
+2. Go to your local [Futon](http://localhost:5984/_utils/)
+3. Open the `monitool` database
+4. Click on `New Document`
+5. Set the `_id` as `usr:` and the `auth.training.account` defined in the `./config.json`
+6. `Add Field` -> `type` = `user`
+7. `Add Field` -> `name` = `Your Name`
+8. `Add Field` -> `role` = `admin`
+9. Be sure each field is saved (green checkmark)
+10. Click on `Save Document`
+
+**=> Now you can use the training account auth method**
+
 Install dependencies, and build the app
 
 	# Install all dependencies needed by Monitool's backend
