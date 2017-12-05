@@ -85,7 +85,7 @@ gulp.task('build-js', ['bower'], function() {
 	queue.queue(
 		gulp.src(['client/js/**/*.js', 'client/i18n/**/*.js', '!client/js/**/*_test.js', '!client/js/init.js'])
 			.pipe(ngAnnotate())
-			.pipe(uglify())
+			// .pipe(uglify())
 	);
 
 	// merge all templates into one angular module.
